@@ -4,11 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Inquiry | Contact</title>
+    
+    <link rel="preconnect" href="https://www.gstatic.com">
+    <link rel="preconnect" href="https://api.emailjs.com">
+
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            background-color: #fcfcfc;
+        }
         
         header { background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1rem 0; position: sticky; top: 0; z-index: 100; }
         nav { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; }
@@ -21,41 +30,62 @@
 
         .contact-form { 
             background: #fff; 
-            padding: 2rem; 
-            border-radius: 8px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 2.5rem; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             max-width: 600px;
+            margin: 0 auto;
         }
-        .form-group { margin-bottom: 1.5rem; }
+
+        h2 { text-align: center; margin-bottom: 2rem; font-size: 2rem; }
+
+        .form-group { margin-bottom: 1.2rem; }
         input, textarea { 
             width: 100%; 
-            padding: 0.8rem; 
-            border: 1px solid #ddd; 
-            border-radius: 4px; 
+            padding: 0.9rem; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 6px; 
             font-size: 1rem;
+            transition: border-color 0.2s;
         }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #0066cc;
+        }
+
         .submit-btn { 
             background: #0066cc; 
             color: white; 
-            padding: 0.8rem 2rem; 
+            padding: 1rem 2rem; 
             border: none; 
-            border-radius: 4px; 
+            border-radius: 6px; 
             cursor: pointer; 
             font-weight: bold;
-            transition: background 0.3s;
+            width: 100%;
+            font-size: 1.1rem;
+            transition: transform 0.1s, background 0.3s;
         }
-        .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .submit-btn:active { transform: scale(0.98); }
+        .submit-btn:disabled { background: #a0c4ff; cursor: not-allowed; }
 
+        /* Smooth animation for the success box */
         #successMessage {
             background: #d4edda;
             color: #155724;
             padding: 1rem;
-            border-radius: 4px;
+            border-radius: 6px;
             margin-bottom: 1.5rem;
             display: none; 
+            text-align: center;
+            animation: fadeIn 0.4s ease-out;
         }
 
-        footer { background: #f5f5f5; text-align: center; padding: 2rem; color: #666; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        footer { background: #f5f5f5; text-align: center; padding: 2rem; color: #666; margin-top: 4rem; }
     </style>
 </head>
 <body>
@@ -74,24 +104,22 @@
         <section id="contact">
             <h2>Get in Touch</h2>
             <div class="contact-form">
-                <div id="successMessage">
-                    ✅ Success! Your message has been sent to the client.
-                </div>
+                <div id="successMessage"></div>
                 
                 <form id="contact-form">
                     <div class="form-group">
-                        <input type="text" name="user_name" placeholder="Your Name *" required>
+                        <input type="text" name="user_name" placeholder="Full Name *" required>
                     </div>
                     <div class="form-group">
-                        <input type="email" name="user_email" placeholder="Your Email *" required>
+                        <input type="email" name="user_email" placeholder="Email Address *" required>
                     </div>
                     <div class="form-group">
-                        <input type="tel" name="user_phone" placeholder="Your Phone *" required>
+                        <input type="tel" name="user_phone" placeholder="Phone Number *" required>
                     </div>
                     <div class="form-group">
                         <textarea name="message" rows="5" placeholder="Your Message *" required></textarea>
                     </div>
-                    <button type="submit" id="submit-btn" class="submit-btn">Send Message</button>
+                    <button type="submit" id="submit-btn" class="submit-btn">Send Inquiry</button>
                 </form>
             </div>
         </section>
@@ -102,9 +130,11 @@
     </footer>
 
 <script type="module">
+  // 1. Firebase Modules
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+  // 2. Initial Setup
   const firebaseConfig = {
     apiKey: "AIzaSyAMokwsD3s6_G6RZnRTsMAZtyuQlM2lwmg",
     authDomain: "email-system-solution.firebaseapp.com",
@@ -114,7 +144,6 @@
     appId: "1:43589241536:web:fd5d34a15abaf1adecbb25"
   };
 
-  // Initialize Services
   emailjs.init("mhKhql7Bhg-ecnPQg");
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -126,10 +155,13 @@
   contactForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
-    // UI Feedback
-    btn.innerText = "Sending...";
+    // SPEED BOOSTER: Optimistic UI
+    // Show feedback immediately before the server even responds
+    successDiv.style.display = "block";
+    successDiv.style.background = "#e3f2fd"; // Blue for "sending"
+    successDiv.style.color = "#0d47a1";
+    successDiv.innerText = "Processing your inquiry...";
     btn.disabled = true;
-    successDiv.style.display = "none";
 
     const templateParams = {
       from_name: contactForm.user_name.value,
@@ -138,33 +170,37 @@
       message: contactForm.message.value
     };
 
-    // SPEED OPTIMIZATION: Start both tasks at the same time
-    // We don't use 'await' here so they run in parallel
-    const firebaseTask = addDoc(collection(db, "inquiries"), {
+    // Parallel Background Execution
+    // We don't wait for one to finish before starting the other
+    const firebasePromise = addDoc(collection(db, "inquiries"), {
       ...templateParams,
       date: serverTimestamp()
     });
 
-    const emailjsTask = emailjs.send(
-      'service_cv1f4um', 
-      'template_eqqdbok', 
-      templateParams
-    );
+    const emailjsPromise = emailjs.send('service_cv1f4um', 'template_eqqdbok', templateParams);
 
-    // Wait for both to finish before updating UI
-    // 
-    Promise.all([firebaseTask, emailjsTask])
+    
+
+    Promise.all([firebasePromise, emailjsPromise])
       .then(() => {
-        successDiv.style.display = "block";
+        // Success State
+        successDiv.style.background = "#d4edda";
+        successDiv.style.color = "#155724";
+        successDiv.innerText = "✅ Success! We have received your inquiry.";
         contactForm.reset();
       })
       .catch((error) => {
-        console.error("Error:", error);
-        alert("Something went wrong. Please check your connection.");
+        // Error State
+        console.error("Transmission Error:", error);
+        successDiv.style.background = "#f8d7da";
+        successDiv.style.color = "#721c24";
+        successDiv.innerText = "❌ Something went wrong. Please check your internet connection.";
       })
       .finally(() => {
-        btn.innerText = "Send Message";
         btn.disabled = false;
+        // Keep the success message visible for 5 seconds
+        setTimeout(() => { successDiv.style.opacity = "0"; }, 5000);
+        setTimeout(() => { successDiv.style.display = "none"; successDiv.style.opacity = "1"; }, 5500);
       });
   });
 </script>

@@ -52,7 +52,7 @@
             padding: 1rem;
             border-radius: 4px;
             margin-bottom: 1.5rem;
-            display: none; /* Hidden by default */
+            display: none; 
         }
 
         footer { background: #f5f5f5; text-align: center; padding: 2rem; color: #666; }
@@ -102,11 +102,9 @@
     </footer>
 
 <script type="module">
-  // 1. Firebase Imports
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  // 2. Configuration
   const firebaseConfig = {
     apiKey: "AIzaSyAMokwsD3s6_G6RZnRTsMAZtyuQlM2lwmg",
     authDomain: "email-system-solution.firebaseapp.com",
@@ -116,26 +114,23 @@
     appId: "1:43589241536:web:fd5d34a15abaf1adecbb25"
   };
 
-  // Initialize EmailJS (REPLACE WITH YOUR PUBLIC KEY)
+  // Initialize Services
   emailjs.init("mhKhql7Bhg-ecnPQg");
-
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // 3. Form Logic
   const contactForm = document.getElementById('contact-form');
   const btn = document.getElementById('submit-btn');
   const successDiv = document.getElementById('successMessage');
 
-  contactForm.addEventListener('submit', async (e) => {
+  contactForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
     // UI Feedback
-    btn.innerText = "Processing...";
+    btn.innerText = "Sending...";
     btn.disabled = true;
+    successDiv.style.display = "none";
 
-    // Map form data to variables
     const templateParams = {
       from_name: contactForm.user_name.value,
       from_email: contactForm.user_email.value,
@@ -143,31 +138,34 @@
       message: contactForm.message.value
     };
 
-    try {
-      // A. Save to Firebase (Backup)
-      await addDoc(collection(db, "inquiries"), {
-        ...templateParams,
-        date: serverTimestamp()
+    // SPEED OPTIMIZATION: Start both tasks at the same time
+    // We don't use 'await' here so they run in parallel
+    const firebaseTask = addDoc(collection(db, "inquiries"), {
+      ...templateParams,
+      date: serverTimestamp()
+    });
+
+    const emailjsTask = emailjs.send(
+      'service_cv1f4um', 
+      'template_eqqdbok', 
+      templateParams
+    );
+
+    // Wait for both to finish before updating UI
+    // 
+    Promise.all([firebaseTask, emailjsTask])
+      .then(() => {
+        successDiv.style.display = "block";
+        contactForm.reset();
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("Something went wrong. Please check your connection.");
+      })
+      .finally(() => {
+        btn.innerText = "Send Message";
+        btn.disabled = false;
       });
-
-      // B. Send via EmailJS (REPLACE SERVICE & TEMPLATE IDs)
-      await emailjs.send(
-        'service_cv1f4um', 
-        'template_eqqdbok', 
-        templateParams
-      );
-
-      // C. Success UI
-      successDiv.style.display = "block";
-      contactForm.reset();
-      btn.innerText = "Send Message";
-      btn.disabled = false;
-
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Something went wrong. Please check the console.");
-      btn.disabled = false;
-    }
   });
 </script>
 </body>
